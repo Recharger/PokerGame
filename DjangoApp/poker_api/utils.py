@@ -114,7 +114,6 @@ class Player:
             
 
 class Game:
-    __games__ = []
     __players__ = None
     __winners__ = None
     __is_finished__ = None
@@ -133,19 +132,22 @@ class Game:
         if self.__is_started__:
             raise Exception("Game already started")
 
-        if len(self.__players__) < 5:
+        if len(self.__players__) < 3:
             self.__players__.append(player)
-            if len(self.__players__) == 5:
+            if len(self.__players__) == 3:
                 self.start()
         else:
             raise Exception("Max number of players reached")
     
     def start(self):
         self.__is_started__ = True
-        for player in self.__players__ and not self.__is_finished__:
-            for _ in range(self.__cards_in_hand__):
-                player.add_card(self.__card_deck__.pop())
-        self.showdown()
+        if not self.__is_finished__:
+            for player in self.__players__:
+                for _ in range(self.__cards_in_hand__):
+                    player.add_card(self.__card_deck__.pop())
+            self.showdown()
+        else:
+            raise Exception("Game already played")
 
     def check_hand(self, player):
         cards = player.get_hand()
@@ -209,7 +211,7 @@ class Game:
             print(f"{player}: {results[player]}")
         self.__winners__ = [player for player, value in results.items() if value == max(results.values())]
         self.__is_finished__ = True
-        return max_values
+        return self.__winners__
 
     def get_players(self):
         return self.__players__

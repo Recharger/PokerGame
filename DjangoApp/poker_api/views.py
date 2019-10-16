@@ -34,14 +34,15 @@ class GameViewSet(viewsets.ViewSet):
         return Response(self.games.index(new_game))
 
     def retrieve(self, request, pk=None):
-        if pk > 0 and pk < len(self.games):
+        pk = int(pk)
+        if pk >= 0 and pk < len(self.games):
             game = self.games[pk]
             if len(game.get_winners()) > 0:
                 for player in game.get_players():
                     if player.is_me(request.user):
                         if player in game.get_winners():
                             combination = game.check_hand(player)
-                            return Response(json.dumps({"message": f"You win with {combination[0].name}, {combination[1]}"}), status=status.HTTP_200_OK)
+                            return Response(json.dumps({"message": f"You win with {combination[0].name}, {combination[1]} high"}), status=status.HTTP_200_OK)
                         else:
                             return Response(json.dumps({"message": "You lose"}), status=status.HTTP_200_OK)
             else:
@@ -51,17 +52,23 @@ class GameViewSet(viewsets.ViewSet):
             return Response(json.dumps({"message": "No game with this pk"}), status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
-        if pk > 0  and pk < len(self.games):
+        pk = int(pk)
+        if pk >= 0 and pk < len(self.games):
             player = Player(request.user)
             try:
-                games[pk].add_player(player)
-                return Response('ok', status=status.HTTP_201_CREATED)
+                if not any([player.is_me(request.user) for player in self.games[pk].get_players()]):
+                    self.games[pk].add_player(player)
+                    return Response('ok', status=status.HTTP_201_CREATED)
+                else:
+                    return Response('already registered', status=status.HTTP_200_OK)
             except Exception as e:
-                return Response(e.message, status=status.HTTP_400_BAD_REQUEST)
+                print(e)
+                return Response("An error occured", status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(json.dumps({"message": "No game with this pk"}), status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
+        pk = int(pk)
         if pk > 0  and pk < len(self.games):
             del self.games[pk]
             return Response(json.dumps({"message": "Game deleted"}), status=status.HTTP_200_OK)
